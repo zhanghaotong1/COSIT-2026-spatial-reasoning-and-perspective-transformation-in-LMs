@@ -1,4 +1,4 @@
-# cosit-2026-spatial-reasoning-and-perspective-transformation-in-LMs
+# On Spatial Reasoning and Perspective Transformation in Language Models
 
 ## Introduction
 

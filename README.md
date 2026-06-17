@@ -8,10 +8,16 @@ The `data` folder contains the training set and test set for each task. Files ar
 
 The `predictions` folder contains all predicted files from the finetuned language models, grouped by different random seeds. The `predictions/gemini_pred` folder contains Gemini's predictions on main experiments.
 
-The `main.py` script is used for the main experiments (*i.e.*, finetune a language model, test the finetuned model). Use 
+The `main.py` script is used for the main experiments (*i.e.*, finetune a language model, test the finetuned model or test the pretrained model). The `parallel.py` script is the parallel training version of `main.py` (*i.e.*, use multiple GPUs). Use 
 
 ```
 python3 main.py --help
+```
+
+or
+
+```
+python3 parallel.py --help
 ```
 
 to see all possible arguments.

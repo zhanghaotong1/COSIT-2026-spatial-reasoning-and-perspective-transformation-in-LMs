@@ -6,7 +6,7 @@ This repository is for our work published at COSTI 2026 *On Spatial Reasoning an
 
 The `data` folder contains the training set and test set for each task. Files are in jsonl format. The `data/data_generator` folder contains all scripts to generate datasets.
 
-The `predictions` folder contains all predicted files from the finetuned language models, grouped by different random seeds. The `predictions/gemini_pred` folder contains Gemini's predictions on main experiments.
+The `predictions` folder contains all predicted files from the finetuned language models, grouped by different tasks. In each folder, files are named in the format *{model_name}\_{model_size}\_{random_seed}*. In the `predictions/omr` folder, we only include predicted files of DeBERTa-v3 large, because RoBERTa large and T5 base fail to converge on this task. The `predictions/gemini_pred` folder contains Gemini's predictions on main experiments.
 
 The `main.py` script is used for the main experiments (*i.e.*, finetune a language model, test the finetuned model or test the pretrained model). The `parallel.py` script is the parallel training version of `main.py` (*i.e.*, use multiple GPUs). Use 
 

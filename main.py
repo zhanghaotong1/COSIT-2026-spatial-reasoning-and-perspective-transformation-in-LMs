@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser()
 parser.add_argument('--train', type=str, default='../data/train.txt', help='training set path')
 parser.add_argument('--test', type=str, default='../data/test.txt', help='test set path')
-parser.add_argument('--pred', type=str, default='../data/pred.txt', help='path to store predicted file')
+parser.add_argument('--pred', type=str, default='../data/pred/', help='path to store predicted file')
 parser.add_argument('--ckpt', type=str, default='../model/', help='path to store checkpoint')
 parser.add_argument('--task', type=str, default='train', help='train, test or pretrain')
 
 parser.add_argument('-n', '--name', type=str, required=True, help='language model')
 parser.add_argument('-s', '--size', type=str, required=True, help='model size')
 parser.add_argument('-b', '--batch', type=int, default=24, help='batch size')
-parser.add_argument('-e', '--epoch', type=int, default=10, help='training epoch.')
+parser.add_argument('-e', '--epoch', type=int, default=10, help='training epoch')
 parser.add_argument('--lr', type=float, default=1e-6, help='learning rate')
 parser.add_argument('--seed', type=int, default=42, help='random seed')
 args = parser.parse_args()
@@ -137,7 +137,8 @@ def test_model(args, model, tokenizer, device):
         data_file.close()
         assert len(data) == len(all_pred)
 
-        f = open(args.pred, 'w')
+        pred_file = args.pred + f'{args.name}_{args.size}_{args.seed}.txt'
+        f = open(pred_file, 'w')
         for d, p in zip(data, all_pred):
             d = json.loads(d.strip())
             d['pred'] = 'satisfiable' if p == 0 else 'unsatisfiable'
@@ -154,8 +155,10 @@ def train_model(args, device, logger, has_model=False):
     tokenizer, model = load_encoder_tokenizer(args)
     model = model.to(device)
 
+    total_steps = len(train_dataloader) * args.epoch
+    num_warmup_steps = int(0.1 * total_steps)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    scheduler = get_linear_schedule_with_warmup(optimizer, len(train_dataloader), 100000)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps, total_steps)
 
     best_acc = 50
 
@@ -179,6 +182,7 @@ def train_model(args, device, logger, has_model=False):
             loss = model(**inputs, labels=labels).loss
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             scheduler.step()
             avg_loss += loss.item()
@@ -188,7 +192,8 @@ def train_model(args, device, logger, has_model=False):
         if test_acc > best_acc:
             best_acc = test_acc
             torch.save({'model_state_dict': model.state_dict(), 'optimizer_state_dict': optimizer.state_dict(),
-                        'scheduler_state_dict': scheduler.state_dict(), 'best_acc': best_acc}, args.ckpt + '%s_%s_%s.pt' % (args.name, args.size, args.seed))
+                        'scheduler_state_dict': scheduler.state_dict(),
+                        'best_acc': best_acc}, args.ckpt + '%s_%s_%s.pt' % (args.name, args.size, args.seed))
             logger.info('Saving model to %s, epoch %s' % (args.ckpt + '%s_%s_%s.pt' % (args.name, args.size, args.seed), epoch_num + 1))
 
     print('Training finishes! Best accuracy on test set is %.2f' % best_acc)
